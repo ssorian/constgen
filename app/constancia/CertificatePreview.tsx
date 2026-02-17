@@ -1,56 +1,100 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CertificateData } from '@/lib/types/certificate';
-import { generateCertificateHTML } from '@/lib/templates/certificateTemplate';
+import { CertificateTemplate } from '@/lib/templates/CertificateTemplate';
 
 interface CertificatePreviewProps {
     data: CertificateData;
 }
 
 export default function CertificatePreview({ data }: CertificatePreviewProps) {
-    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(0.5);
 
     useEffect(() => {
-        if (iframeRef.current) {
-            const html = generateCertificateHTML(data);
-            const iframe = iframeRef.current;
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        const updateScale = () => {
+            if (containerRef.current) {
+                const containerWidth = containerRef.current.clientWidth;
+                // Add margins/padding consideration (p-8 = 32px * 2 = 64px)
+                const availableWidth = containerWidth - 64;
+                const targetWidth = 1056; // 11in at 96dpi (11 * 96)
 
-            if (iframeDoc) {
-                iframeDoc.open();
-                iframeDoc.write(html);
-                iframeDoc.close();
+                // Calculate scale to fit width
+                let newScale = availableWidth / targetWidth;
+
+                // Cap max scale to prevent it from being too large on huge screens
+                newScale = Math.min(newScale, 1.2);
+
+                // Use a standard minimum scale to avoid it disappearing
+                newScale = Math.max(newScale, 0.1);
+
+                setScale(newScale);
             }
+        };
+
+        // Initial calculation
+        updateScale();
+
+        // Resize observer
+        const observer = new ResizeObserver(updateScale);
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
         }
-    }, [data]);
+
+        window.addEventListener('resize', updateScale);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', updateScale);
+        };
+    }, []);
+
+    const FULL_WIDTH = 1056; // 11in * 96dpi
+    const FULL_HEIGHT = 816; // 8.5in * 96dpi
+
+    // The wrapper needs to have the dimensions of the SCALED content
+    // so that the parent flex container centers it correctly.
+    const PREVIEW_WIDTH = FULL_WIDTH * scale;
+    const PREVIEW_HEIGHT = FULL_HEIGHT * scale;
 
     return (
         <div className="h-full flex flex-col">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Previsualización</h2>
+            <h2 className="text-2xl font-bold text-gray-800 ">Previsualización (React)</h2>
 
-            <div className="flex-1 bg-gray-100 rounded-lg p-8 flex items-start justify-center overflow-hidden">
-                <div className="bg-white shadow-2xl" style={{
-                    width: '400px', // Fixed smaller width for preview
-                    height: '517px', // Proportional height (400 * 11 / 8.5)
-                    overflow: 'hidden',
-                    position: 'relative'
-                }}>
-                    <iframe
-                        ref={iframeRef}
-                        title="Certificate Preview"
-                        className="border-0"
+            <div
+                ref={containerRef}
+                className="flex-1 flex items-center justify-center min-h-[500px] overflow-hidden"
+            >
+                {/* 
+                   Wrapper div to establish the space the scaled certificate occupies.
+                   This allows flexbox centering to work on the visual size.
+                */}
+                <div
+                    style={{
+                        width: `${PREVIEW_WIDTH}px`,
+                        height: `${PREVIEW_HEIGHT}px`,
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    }}
+                >
+                    {/* 
+                       Inner div contains the actual certificate at full size, 
+                       scaled down to fit the wrapper.
+                    */}
+                    <div
+                        className="bg-white origin-top-left"
                         style={{
-                            width: '816px', // Letter width at 96dpi (8.5in)
-                            height: '1056px', // Letter height at 96dpi (11in)
-                            transform: `scale(${400 / 816})`, // Scale factor to fit 400px
-                            transformOrigin: 'top left',
-                            display: 'block',
+                            width: `${FULL_WIDTH}px`,
+                            height: `${FULL_HEIGHT}px`,
+                            transform: `scale(${scale})`,
                             position: 'absolute',
                             top: 0,
-                            left: 0
+                            left: 0,
                         }}
-                    />
+                    >
+                        <CertificateTemplate data={data} />
+                    </div>
                 </div>
             </div>
         </div>

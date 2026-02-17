@@ -1,11 +1,34 @@
 import { chromium } from 'playwright';
 import { CertificateData } from './types/certificate';
-import { generateCertificateHTML } from './templates/certificateTemplate';
+import { generateCertificateHtml } from './templates/CertificateTemplate';
+import { imagesToBase64 } from './utils/imageToBase64';
 
 export async function generatePdf(data: CertificateData): Promise<Buffer> {
     let browser;
 
     try {
+        // Convert images to base64 for embedding in the PDF
+        const imageNames = [
+            'Colibrii.png',
+            'Header.png',
+            'Sello.png',
+            'Firma.png',
+            'Logos.png',
+            'Flores.png'
+        ];
+
+        const base64Images = await imagesToBase64(imageNames);
+
+        // Map to the structure expected by generateCertificateHtml
+        const images = {
+            colibri: base64Images['Colibrii.png'],
+            header: base64Images['Header.png'],
+            sello: base64Images['Sello.png'],
+            firma: base64Images['Firma.png'],
+            logos: base64Images['Logos.png'],
+            flores: base64Images['Flores.png']
+        };
+
         // Launch browser
         browser = await chromium.launch({
             headless: true,
@@ -14,8 +37,8 @@ export async function generatePdf(data: CertificateData): Promise<Buffer> {
         const context = await browser.newContext();
         const page = await context.newPage();
 
-        // Generate HTML content
-        const htmlContent = generateCertificateHTML(data);
+        // Generate HTML content with embedded base64 images
+        const htmlContent = generateCertificateHtml(data, images);
 
         // Set content
         await page.setContent(htmlContent, {
@@ -24,13 +47,14 @@ export async function generatePdf(data: CertificateData): Promise<Buffer> {
 
         // Generate PDF
         const pdfBuffer = await page.pdf({
-            format: 'Letter', // 8.5" x 11"
+            format: 'Letter',
+            landscape: true,
             printBackground: true,
             margin: {
-                top: '0.5in',
-                right: '0.5in',
-                bottom: '0.5in',
-                left: '0.5in',
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0',
             },
         });
 
@@ -44,3 +68,4 @@ export async function generatePdf(data: CertificateData): Promise<Buffer> {
         throw error;
     }
 }
+

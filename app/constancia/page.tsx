@@ -173,9 +173,9 @@ export default function ConstanciaPage() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
                     {/* Left Column - Form */}
-                    <div className="bg-white rounded-xl shadow-xl p-8">
+                    <div className="lg:col-span-4 bg-white rounded-xl shadow-xl p-8">
                         <CertificateForm
                             data={certificateData}
                             onChange={setCertificateData}
@@ -183,7 +183,7 @@ export default function ConstanciaPage() {
                     </div>
 
                     {/* Right Column - Preview */}
-                    <div className="bg-white rounded-xl shadow-xl p-8">
+                    <div className="lg:col-span-8 bg-white rounded-xl shadow-xl p-8">
                         <CertificatePreview data={certificateData} />
                     </div>
                 </div>

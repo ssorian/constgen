@@ -4,6 +4,8 @@ export interface CertificateData {
     horas: number;
     fecha: string;
     cuv: string;
+    startDate: string,
+    endDate: string,
     validationUrl?: string; // URL for the QR code
     qrCodeDataUrl?: string; // Base64 QR code to be passed to the template
     isImported?: boolean; // Flag to indicate if data came from Excel
