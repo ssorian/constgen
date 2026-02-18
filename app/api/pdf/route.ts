@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generatePdf } from '@/lib/generatePdf';
 import { CertificateData } from '@/lib/types/certificate';
 import QRCode from 'qrcode';
+import generateRandomKey from '@/lib/utils/generateRandomKey';
 
 export async function POST(request: NextRequest) {
     try {
@@ -9,28 +10,33 @@ export async function POST(request: NextRequest) {
         const { data } = body as { data: CertificateData };
 
         // Validate input
-        if (!data || !data.nombre || !data.curso || !data.horas || !data.fecha || !data.cuv) {
+        if (!data || !data.nombre || !data.curso || !data.horas || !data.fecha) {
             return NextResponse.json(
                 { success: false, error: 'Datos incompletos' },
                 { status: 400 }
             );
         }
+        // Ensure CUV exists (generate if missing)
+        if (!data.cuv) {
+            data.cuv = generateRandomKey();
+        }
 
-        // Generate QR Code if validationUrl is provided
-        if (data.validationUrl) {
-            try {
-                data.qrCodeDataUrl = await QRCode.toDataURL(data.validationUrl, {
-                    width: 200,
-                    margin: 1,
-                    color: {
-                        dark: '#2c5282',
-                        light: '#ffffff',
-                    },
-                });
-            } catch (qrError) {
-                console.error('Error generating QR code:', qrError);
-                // Continue without QR code if generation fails
-            }
+        // Siempre generar QR con la URL base y el nombre del PDF
+        const baseUrl = 'https://escuelanormal.blob.core.windows.net/constancias/';
+        const pdfFileName = `constancia-${data.nombre.replace(/\s+/g, '-')}.pdf`;
+        const qrUrl = `${baseUrl}${pdfFileName}`;
+        try {
+            data.qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
+                width: 200,
+                margin: 1,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff',
+                },
+            });
+        } catch (qrError) {
+            console.error('Error generating QR code:', qrError);
+            // Continue without QR code if generation fails
         }
 
         // Generate PDF

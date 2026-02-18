@@ -81,35 +81,33 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                 </div>
 
                 <div>
-                    <label htmlFor="cuv" className="block text-sm font-medium text-black mb-2">
-                        CUV (Código Único de Verificación) *
+                    <label htmlFor="matricula" className="block text-sm font-medium text-black mb-2">
+                        Matrícula del Alumno *
                     </label>
                     <input
                         type="text"
-                        id="cuv"
-                        value={data.cuv}
-                        onChange={(e) => handleChange('cuv', e.target.value.toUpperCase())}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono text-black"
-                        placeholder="Ej: ABC123XYZ789"
+                        id="matricula"
+                        value={data.matricula || ''}
+                        onChange={(e) => handleChange('matricula', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                        placeholder="Ej: 2023A001"
                         required
                     />
                 </div>
 
                 <div>
-                    <label htmlFor="validationUrl" className="block text-sm font-medium text-black mb-2">
-                        URL de Validación (para QR)
+                    <label htmlFor="curp" className="block text-sm font-medium text-black mb-2">
+                        CURP del Alumno *
                     </label>
                     <input
-                        type="url"
-                        id="validationUrl"
-                        value={data.validationUrl || ''}
-                        onChange={(e) => handleChange('validationUrl', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
-                        placeholder="https://ejemplo.com/validar/CUV"
+                        type="text"
+                        id="curp"
+                        value={data.curp || ''}
+                        onChange={(e) => handleChange('curp', e.target.value.toUpperCase())}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono text-black"
+                        placeholder="Ej: GARC850101HDFRNN09"
+                        required
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                        Si se proporciona, se generará un código QR en la constancia.
-                    </p>
                 </div>
             </div>
 

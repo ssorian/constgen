@@ -1,64 +1,62 @@
-import { proxy } from "@/proxy"
-import { NextRequest, NextResponse } from "next/server"
+import { BlobServiceClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 
-export async function POST(req: NextRequest) {
-    const session = await proxy()
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-    if (!session || !session.accessToken) {
-        return NextResponse.json(
-            { error: "No autorizado. Inicia sesión primero." },
-            { status: 401 }
-        )
+function getFilename(request: Request): string {
+  const disposition = request.headers.get("content-disposition") || "";
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  return match?.[1] ?? `upload-${Date.now()}.pdf`;
+}
+
+export async function POST(request: Request) {
+  const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
+  const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
+  const containerName = process.env.AZURE_STORAGE_CONTAINER_NAME;
+
+  if (!accountName || !accountKey || !containerName) {
+    return Response.json(
+      { error: "Faltan variables de entorno" },
+      { status: 500 }
+    );
+  }
+
+  try {
+    const arrayBuffer = await request.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+
+    if (fileBuffer.length === 0) {
+      return Response.json(
+        { error: "El archivo está vacío" },
+        { status: 400 }
+      );
     }
 
-    try {
-        const formData = await req.formData()
-        const file = formData.get("file") as File
-        const fileName = formData.get("fileName") as string
+    const filename = getFilename(request);
+    const contentType =
+      request.headers.get("content-type") || "application/octet-stream";
 
-        if (!file) {
-            return NextResponse.json({ error: "No hay archivo" }, { status: 400 })
-        }
+    const blobServiceClient = new BlobServiceClient(
+      `https://${accountName}.blob.core.windows.net`,
+      new StorageSharedKeyCredential(accountName, accountKey)
+    );
 
-        const finalFileName = fileName || file.name
-        const folderName = "Constancias"
-        const arrayBuffer = await file.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(filename);
 
-        // Upload to OneDrive using Microsoft Graph API
-        const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/${folderName}/${finalFileName}:/content`
+    await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
+      blobHTTPHeaders: { blobContentType: contentType },
+    });
 
-        const response = await fetch(uploadUrl, {
-            method: "PUT",
-            headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-                "Content-Type": "application/pdf",
-            },
-            body: buffer,
-        })
-
-        if (!response.ok) {
-            const errorData = await response.json()
-            console.error("OneDrive upload error:", errorData)
-            return NextResponse.json(
-                { error: errorData.error?.message || "Error al subir archivo" },
-                { status: response.status }
-            )
-        }
-
-        const result = await response.json()
-
-        return NextResponse.json({
-            success: true,
-            webUrl: result.webUrl,
-            fileName: finalFileName,
-            id: result.id
-        })
-    } catch (error) {
-        console.error("Error uploading to OneDrive:", error)
-        return NextResponse.json(
-            { error: "Error en el servidor" },
-            { status: 500 }
-        )
-    }
+    return Response.json({
+      message: "Archivo subido con éxito",
+      url: blockBlobClient.url,
+    });
+  } catch (error) {
+    console.error("Error subiendo archivo:", error);
+    return Response.json(
+      { error: "Error al subir el archivo" },
+      { status: 500 }
+    );
+  }
 }

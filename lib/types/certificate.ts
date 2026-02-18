@@ -3,7 +3,9 @@ export interface CertificateData {
     curso: string;
     horas: number;
     fecha: string;
-    cuv: string;
+    cuv?: string;
+    curp?: string;
+    matricula?: string;
     startDate: string,
     endDate: string,
     validationUrl?: string; // URL for the QR code
