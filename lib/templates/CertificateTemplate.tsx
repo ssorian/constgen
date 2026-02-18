@@ -25,7 +25,7 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
     >
       <div className=" w-[9.5in] h-[7in] border-[4px] border-[#BC955C] bg-gradient-to-br from-white to-gray-100 p-[0.1in] relative shadow-inner">
         <img src="/Colibrii.png" alt="Colibri" width={300} className="absolute bottom-6 left-[-77]" />
-        <div className="h-full flex flex-col ">
+        <div className="h-full flex flex-col justify-between">
 
           {/* Header */}
           <div className="flex pl-3">
@@ -33,7 +33,7 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
           </div>
 
           {/* Content */}
-          <div className="ml-20 flex flex-col justify-center  text-center text-black">
+          <div className="ml-36 flex flex-col justify-center  text-center text-black">
             <p className="text-sm leading-relaxed text-black ">
               "<span className="text-[#9F2241] font-extrabold">2025. </span>Año del Bicentenario de la Vida Municipal del Estado de Mexico"
             </p>
@@ -154,7 +154,7 @@ export const generateCertificateHtml = (
           </div>
 
           <!-- Contenido Principal -->
-          <div class="ml-20 flex flex-col justify-center text-center text-black">
+          <div class="ml-36 flex flex-col justify-between text-center text-black">
             <p class="text-sm leading-relaxed text-black">
               "<span class="text-[#9F2241] font-extrabold">2025. </span>Año del Bicentenario de la Vida Municipal del Estado de México"
             </p>
