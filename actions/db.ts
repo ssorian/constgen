@@ -64,8 +64,8 @@ export async function createStudent(
 
     // ¿Ya existe?
     const [rows] = await pool.execute(
-        `SELECT alumno_id FROM alumno WHERE matricula = ?`,
-        [cleanMatricula],
+        `SELECT alumno_id FROM alumno WHERE curp = ?`,
+        [cleanCurp],
     );
 
     if ((rows as any[]).length > 0) {

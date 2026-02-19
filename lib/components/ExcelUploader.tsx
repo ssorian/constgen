@@ -35,6 +35,9 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                         header: 1,
                     }) as any[][];
 
+                    console.log(`[Sheet: ${sheetName}] Total rows: ${jsonData.length}`);
+                    console.log(`[Sheet: ${sheetName}] Headers:`, jsonData[0]);
+
                     if (jsonData.length === 0) return;
 
                     const headers = jsonData[0];

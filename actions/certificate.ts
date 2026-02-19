@@ -158,15 +158,18 @@ export async function generateAndUploadBulk(
         prepared.map(({ buffer, fileName }) => ({ buffer, fileName })),
     );
 
-    const dbRegistrations = blobResults.map((blobResult, i) => {
+    // ── Execute DB Registrations sequentially to avoid race condition ────────────────
+    // When a single student has multiple certificates, concurrent registrations
+    // cause duplicate UNIQUE constraint errors during DB insertion, leading exactly 
+    // to 1 saved certificate per student. Sequential execution avoids this completely.
+    for (let i = 0; i < blobResults.length; i++) {
+        const blobResult = blobResults[i];
         const { certData } = prepared[i];
-        if (blobResult.success && blobResult.url) {
-            return registerInDatabase(certData, blobResult.url);
-        }
-        return Promise.resolve();
-    });
 
-    await Promise.allSettled(dbRegistrations);
+        if (blobResult.success && blobResult.url) {
+            await registerInDatabase(certData, blobResult.url);
+        }
+    }
 
     // ── Armar resultado final ─────────────────────────────────────────────────
     return blobResults.map((blobResult, i) => {
