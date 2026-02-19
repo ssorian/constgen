@@ -1,38 +1,33 @@
-export function generateRandomKey(nombre?: string, nombreCurso?: string) {
-  const alphanumeric = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+export async function generateRandomKey(
+  matricula?: string,
+  nombreCurso?: string,
+  fechaTermino?: Date | string,
+  getNextIncrement: () => Promise<number> = async () => 1
+): Promise<string> {
 
-  const nameSafe = String(nombre || '').trim();
-  const courseSafe = String(nombreCurso || '').trim();
+  // --- Segmento de matrícula (3 dígitos) ---
+  const digits = (matricula || '').replace(/\D/g, ''); // solo números
+  const matriculaSegment = digits.length >= 3
+    ? digits.slice(0, 3)
+    : String(Math.floor(Math.random() * 900) + 100); // 100–999
 
-  const randomChars = (chars: string, length: number) =>
-    Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  // --- Primeras 3 letras del curso ---
+  const courseSafe = (nombreCurso || '').trim().replace(/\s+/g, '');
+  const courseSegment = courseSafe.slice(0, 3).toUpperCase().padEnd(3, 'X');
 
-  // Iniciales del nombre (máx 3 letras)
-  const nameInitials = nameSafe
-    .split(' ')
-    .map(word => word[0]?.toUpperCase() ?? '')
-    .join('')
-    .slice(0, 3)
-    .padEnd(3, 'X');
+  // --- Fecha de término (formato YYYYMMDD o DDMMYYYY según prefieras) ---
+  const fecha = fechaTermino ? new Date(fechaTermino) : new Date();
+  const fechaSegment = [
+    String(fecha.getFullYear()),
+    String(fecha.getMonth() + 1).padStart(2, '0'),
+    String(fecha.getDate()).padStart(2, '0'),
+  ].join('');
 
-  // Iniciales del curso (máx 3 letras)
-  const courseInitials = courseSafe
-    .split(' ')
-    .map(word => word[0]?.toUpperCase() ?? '')
-    .join('')
-    .slice(0, 3)
-    .padEnd(3, 'X');
+  // --- Autoincrement desde MySQL ---
+  const increment = await getNextIncrement();
+  const incrementSegment = String(increment).padStart(3, '0');
 
-  // Segmento alfanumérico aleatorio
-  const randomSegment = randomChars(alphanumeric, 4);
-
-  // Secuencia de 5 dígitos
-  const sequence = String(Math.floor(Math.random() * 99999) + 1).padStart(5, '0');
-
-  // Timestamp en base 36 para unicidad
-  const timePart = Date.now().toString(36).slice(-4).toUpperCase();
-
-  return `ENS-${nameInitials}-${courseInitials}-${randomSegment}-${sequence}-${timePart}`;
+  return `ENS-${matriculaSegment}-${courseSegment}-${fechaSegment}-${incrementSegment}`;
 }
 
 export default generateRandomKey;
