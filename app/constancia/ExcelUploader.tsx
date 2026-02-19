@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
+import parseSpanishDate from '@/lib/utils/parseSpanishDate';
 
 interface ExcelUploaderProps {
     onDataImported: (data: any[]) => void;
@@ -25,8 +26,19 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                 const workbook = XLSX.read(data, { type: 'binary' });
                 const allCertificates: any[] = [];
 
-                // Regex to parse header: [Course] (Hours) {StartDate} "EndDate"
-                const headerRegex = /^\[(.*?)\]\s*\((\d+)\)\s*\{(.*?)\}\s*"(.*?)"$/;
+                /**
+                 * ✅ FIX: Match against a lowercase+normalized version of the header
+                 * for detection, but keep the original header for extracting the course name.
+                 *
+                 * Also updated the regex to accept:
+                 *  - Straight quotes:       "fecha"
+                 *  - Typographic quotes:    "fecha" (U+201C / U+201D)
+                 *  - Single smart quotes:   'fecha' (U+2018 / U+2019)
+                 *
+                 * This fixes the issue where Excel encodes the header with curly/smart quotes
+                 * and the regex never matched, leaving startDate and endDate empty.
+                 */
+                const headerRegex = /^\[(.*?)\]\s*\((\d+)\)\s*\{(.*?)\}\s*[\u201C\u201D\u2018\u2019"'](.*?)[\u201C\u201D\u2018\u2019"']$/;
 
                 workbook.SheetNames.forEach((sheetName) => {
                     const worksheet = workbook.Sheets[sheetName];
@@ -45,25 +57,54 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
 
                     headers.forEach((header: any, index: number) => {
                         if (typeof header !== 'string') return;
-                        const headerTrimmed = header.trim().toLowerCase();
 
-                        if (headerTrimmed.includes('nombre')) {
+                        // ✅ FIX: Use a separate lowercase version for column detection only.
+                        // The original `header` is used for the course regex to preserve casing.
+                        const headerLower = header.trim().toLowerCase();
+
+                        if (headerLower.includes('nombre')) {
                             nameIndex = index;
-                        } else if (headerTrimmed.includes('matricula') || headerTrimmed.includes('matrícula')) {
+                        } else if (headerLower.includes('matricula') || headerLower.includes('matrícula')) {
                             matriculaIndex = index;
-                        } else if (headerTrimmed.includes('curp')) {
+                        } else if (headerLower.includes('curp')) {
                             curpIndex = index;
                         }
 
-                        const match = headerRegex.exec(header.trim());
+                        // ✅ FIX: Run the regex on the original (non-lowercased) header
+                        // so that the course name keeps its proper capitalization.
+                        const headerOriginal = header.trim();
+                        const match = headerRegex.exec(headerOriginal);
+
                         if (match) {
+                            const rawStart = match[3] ? match[3].trim() : '';
+                            const rawEnd   = match[4] ? match[4].trim() : '';
+                            let startDate = rawStart;
+                            let endDate   = rawEnd;
+
+                            try {
+                                const s = parseSpanishDate(rawStart);
+                                const e = parseSpanishDate(rawEnd);
+                                if (s) startDate = s;
+                                if (e) endDate   = e;
+                            } catch {
+                                // fallback: keep raw strings
+                            }
+
+                            if (!startDate || !endDate) {
+                                console.warn(
+                                    `[ExcelUploader] Could not parse dates for header: "${headerOriginal}"`,
+                                    { rawStart, rawEnd, startDate, endDate }
+                                );
+                            }
+
                             courseColumns.push({
                                 index,
                                 courseInfo: {
+                                    // ✅ FIX: Use match[1] from original header → correct casing
                                     courseName: match[1].trim(),
                                     hours: parseInt(match[2], 10),
-                                    startDate: match[3].trim(),
-                                    endDate: match[4].trim(),
+                                    startDate,
+                                    endDate,
                                 },
                             });
                         }
@@ -78,24 +119,26 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                     const dataRows = jsonData.slice(1, 1 + DEV_ROW_LIMIT);
 
                     dataRows.forEach((row) => {
-                        const personName = row[nameIndex];
+
+                        let personName = row[nameIndex];
                         if (!personName) return;
+                        personName = String(personName).toUpperCase();
 
                         const matricula = matriculaIndex !== -1 ? row[matriculaIndex] ?? '' : '';
-                        const curp = curpIndex !== -1 ? row[curpIndex] ?? '' : '';
+                        const curp      = curpIndex !== -1 ? row[curpIndex] ?? '' : '';
 
                         courseColumns.forEach((col) => {
                             const status = row[col.index];
                             if (status === 'REALIZADO') {
                                 allCertificates.push({
-                                    nombre: personName,
-                                    matricula: String(matricula).trim(),
-                                    curp: String(curp).trim(),
-                                    curso: col.courseInfo.courseName,
-                                    horas: col.courseInfo.hours,
+                                    nombre:      personName,
+                                    matricula:   String(matricula).trim(),
+                                    curp:        String(curp).trim(),
+                                    curso:       col.courseInfo.courseName,
+                                    horas:       col.courseInfo.hours,
                                     fechaInicio: col.courseInfo.startDate,
-                                    fecha: col.courseInfo.endDate,
-                                    status: 'REALIZADO',
+                                    fecha:       col.courseInfo.endDate,
+                                    status:      'REALIZADO',
                                     sourceSheet: sheetName,
                                 });
                             }
@@ -135,10 +178,11 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${isDragging
+            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                isDragging
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                }`}
+            }`}
         >
             <input
                 type="file"

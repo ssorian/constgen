@@ -53,11 +53,11 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
             <div className="relative px-3 flex flex-col justify-center text-center items-center text-black">
               <img src="Firma.png" alt="Firma" width={160} className="absolute bottom-6" />
               <div className="w-full h-[0.5px] bg-black"></div>
-              <p className="text-md">Mtro. José Luis Guadarrama Rosales</p>
+              <p className="text-md">Mtro. Rafael Rodriguez Albíter</p>
               <p className="text-md">Director escolar</p>
             </div>
-            <div className="relative flex flex-col text-black">
-              <p>Sultepec, Estado de México a "2025"</p>
+            <div className="relative text-xs flex flex-col text-black">
+              <p>Sultepec, Estado de México a 2025</p>
               <img src="Logos.png" alt="Logos" width={300} />
               {data.qrCodeDataUrl && (
                 <img src={data.qrCodeDataUrl} className="w-32 h-32 absolute border border-gray-300 bg-white bottom-7.5 right-4" alt="QR Code" />
@@ -173,10 +173,10 @@ export const generateCertificateHtml = (
               <div class="relative px-3 flex flex-col justify-center text-center items-center text-black">
                 <img src="${images?.firma || assetPath + '/Firma.png'}" alt="Firma" width="160" class="absolute bottom-6" />
                 <div class="w-full h-[0.5px] bg-black"></div>
-                <p class="text-base">Mtro. José Luis Guadarrama Rosales</p>
+                <p class="text-base">Mtro. Rafael Rodriguez Albíter</p>
                 <p class="text-base">Director escolar</p>
               </div>
-              <div class="relative flex flex-col text-black">
+              <div class="relative text-xs flex flex-col text-black">
                 <p>Sultepec, Estado de México a ${fechaEmision}</p>
                 <img src="${images?.logos || assetPath + '/Logos.png'}" alt="Logos" width="300" />
                 ${data.qrCodeDataUrl ? `<img src="${data.qrCodeDataUrl}" class="w-32 h-32 absolute border border-gray-300 bg-white bottom-[30px] right-4" alt="QR Code" />` : ''}
