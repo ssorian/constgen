@@ -29,7 +29,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             type="text"
                             id="nombre"
                             value={data.nombre}
-                            onChange={(e) => handleChange('nombre', e.target.value)}
+                            onChange={(e) => handleChange('nombre', e.target.value.toUpperCase())}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
                             placeholder="Ej: Juan Pérez García"
                             required
@@ -43,7 +43,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             type="text"
                             id="curso"
                             value={data.curso}
-                            onChange={(e) => handleChange('curso', e.target.value)}
+                            onChange={(e) => handleChange('curso', e.target.value.toUpperCase())}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
                             placeholder="Ej: Desarrollo Web con Next.js"
                             required

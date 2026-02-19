@@ -8,7 +8,7 @@ interface ExcelUploaderProps {
     onDataImported: (data: any[]) => void;
 }
 
-const DEV_ROW_LIMIT = 5; // 🔧 Development: remove or increase for production
+
 
 export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
@@ -26,19 +26,8 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                 const workbook = XLSX.read(data, { type: 'binary' });
                 const allCertificates: any[] = [];
 
-                /**
-                 * ✅ FIX: Match against a lowercase+normalized version of the header
-                 * for detection, but keep the original header for extracting the course name.
-                 *
-                 * Also updated the regex to accept:
-                 *  - Straight quotes:       "fecha"
-                 *  - Typographic quotes:    "fecha" (U+201C / U+201D)
-                 *  - Single smart quotes:   'fecha' (U+2018 / U+2019)
-                 *
-                 * This fixes the issue where Excel encodes the header with curly/smart quotes
-                 * and the regex never matched, leaving startDate and endDate empty.
-                 */
-                const headerRegex = /^\[(.*?)\]\s*\((\d+)\)\s*\{(.*?)\}\s*[\u201C\u201D\u2018\u2019"'](.*?)[\u201C\u201D\u2018\u2019"']$/;
+                // Relaxed regex to capture dates like {02/febrero/2006} "02/febrero/2006"
+                const headerRegex = /^\[(.*?)\]\s*\((\d+)\)\s*\{(.*?)\}\s*[\u201C\u201D\u2018\u2019"']?(.*?)[\u201C\u201D\u2018\u2019"']?$/;
 
                 workbook.SheetNames.forEach((sheetName) => {
                     const worksheet = workbook.Sheets[sheetName];
@@ -77,15 +66,15 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
 
                         if (match) {
                             const rawStart = match[3] ? match[3].trim() : '';
-                            const rawEnd   = match[4] ? match[4].trim() : '';
+                            const rawEnd = match[4] ? match[4].trim() : '';
                             let startDate = rawStart;
-                            let endDate   = rawEnd;
+                            let endDate = rawEnd;
 
                             try {
                                 const s = parseSpanishDate(rawStart);
                                 const e = parseSpanishDate(rawEnd);
                                 if (s) startDate = s;
-                                if (e) endDate   = e;
+                                if (e) endDate = e;
                             } catch {
                                 // fallback: keep raw strings
                             }
@@ -100,8 +89,8 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                             courseColumns.push({
                                 index,
                                 courseInfo: {
-                                    // ✅ FIX: Use match[1] from original header → correct casing
-                                    courseName: match[1].trim(),
+                                    // ✅ FIX: Use match[1] from original header → uppercase
+                                    courseName: match[1].trim().toUpperCase(),
                                     hours: parseInt(match[2], 10),
                                     startDate,
                                     endDate,
@@ -115,8 +104,8 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                         return;
                     }
 
-                    // 🔧 Dev limit: only process first DEV_ROW_LIMIT data rows
-                    const dataRows = jsonData.slice(1, 1 + DEV_ROW_LIMIT);
+                    // Read all rows (skip header), limit to 5 per sheet for development
+                    const dataRows = jsonData.slice(1, 6);
 
                     dataRows.forEach((row) => {
 
@@ -125,20 +114,20 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                         personName = String(personName).toUpperCase();
 
                         const matricula = matriculaIndex !== -1 ? row[matriculaIndex] ?? '' : '';
-                        const curp      = curpIndex !== -1 ? row[curpIndex] ?? '' : '';
+                        const curp = curpIndex !== -1 ? row[curpIndex] ?? '' : '';
 
                         courseColumns.forEach((col) => {
                             const status = row[col.index];
-                            if (status === 'REALIZADO') {
+                            if (String(status ?? '').trim().toUpperCase() === 'REALIZADO') {
                                 allCertificates.push({
-                                    nombre:      personName,
-                                    matricula:   String(matricula).trim(),
-                                    curp:        String(curp).trim(),
-                                    curso:       col.courseInfo.courseName,
-                                    horas:       col.courseInfo.hours,
-                                    fechaInicio: col.courseInfo.startDate,
-                                    fecha:       col.courseInfo.endDate,
-                                    status:      'REALIZADO',
+                                    nombre: personName,
+                                    matricula: String(matricula).trim(),
+                                    curp: String(curp).trim(),
+                                    curso: col.courseInfo.courseName,
+                                    horas: col.courseInfo.hours,
+                                    startDate: col.courseInfo.startDate,
+                                    endDate: col.courseInfo.endDate,
+                                    status: 'REALIZADO',
                                     sourceSheet: sheetName,
                                 });
                             }
@@ -178,11 +167,10 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
-                isDragging
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-            }`}
+            className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${isDragging
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                }`}
         >
             <input
                 type="file"
@@ -203,11 +191,7 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                 El archivo debe tener columnas <strong>Nombre</strong> y <strong>Matricula</strong>, y columnas de curso con el formato:{' '}
                 <code>[Curso] (Horas) {'{Fecha Inicio}'} "Fecha Termino"</code>
             </p>
-            {process.env.NODE_ENV === 'development' && (
-                <p className="text-xs text-amber-500 mt-1">
-                    🔧 Modo desarrollo: solo se procesan las primeras {DEV_ROW_LIMIT} filas por hoja.
-                </p>
-            )}
+
             {error && (
                 <div className="mt-3 text-red-500 text-sm">
                     ⚠️ {error}

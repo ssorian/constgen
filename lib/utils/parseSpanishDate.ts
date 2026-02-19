@@ -57,6 +57,7 @@ export function parseSpanishDate(input?: string): string | null {
     /^(\d{1,2})\s+de\s+([a-záéíóúñ]+)\s+de\s+(\d{4})$/,          // 08 de diciembre de 2025
     /^([a-záéíóúñ]+)\s*[\/\-]\s*(\d{4})$/,                         // diciembre/2025
     /^(\d{4})-(\d{2})-(\d{2})$/,                                    // 2025-02-11 (ISO passthrough)
+    /^(\d{1,2})\s*[\/\-]\s*(\d{1,3})\s*[\/\-]\s*(\d{4})$/,          // 02/02/2006 or 02/002/2006
   ];
 
   for (let i = 0; i < patterns.length; i++) {
@@ -68,11 +69,23 @@ export function parseSpanishDate(input?: string): string | null {
       return `${m[1]}-${m[2]}-${m[3]}`;
     }
 
+    // Format with DD/MM/YYYY
+    if (i === 4) {
+      const day = m[1].padStart(2, '0');
+      const parsedMonth = parseInt(m[2], 10);
+      if (isNaN(parsedMonth) || parsedMonth < 1 || parsedMonth > 12) {
+        console.warn(`[parseSpanishDate] Invalid month parsing number: "${m[2]}" (input: "${input}")`);
+        return null;
+      }
+      const year = m[3];
+      return `${year}-${String(parsedMonth).padStart(2, '0')}-${day}`;
+    }
+
     // Formats with day + monthName + year (groups: day, monthName, year)
     if (i === 0 || i === 1) {
-      const day   = m[1].padStart(2, '0');
+      const day = m[1].padStart(2, '0');
       const month = resolveMonth(m[2]);
-      const year  = m[3];
+      const year = m[3];
       if (!month) {
         console.warn(`[parseSpanishDate] Unknown month name: "${m[2]}" (input: "${input}")`);
         return null;
@@ -83,7 +96,7 @@ export function parseSpanishDate(input?: string): string | null {
     // Format with only monthName + year (groups: monthName, year)
     if (i === 2) {
       const month = resolveMonth(m[1]);
-      const year  = m[2];
+      const year = m[2];
       if (!month) {
         console.warn(`[parseSpanishDate] Unknown month name: "${m[1]}" (input: "${input}")`);
         return null;

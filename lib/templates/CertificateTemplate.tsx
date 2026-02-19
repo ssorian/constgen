@@ -1,6 +1,6 @@
-import { relative } from "path";
 import { CertificateData } from "../types/certificate";
 import { Montserrat } from "next/font/google";
+import parseSpanishDate from "../utils/parseSpanishDate";
 
 interface CertificateTemplateProps {
   data: CertificateData;
@@ -12,6 +12,9 @@ const montserrat = Montserrat({
 });
 
 export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
+
+  const nombre = data.nombre ? data.nombre.toUpperCase() : "SANTIAGO GONZALEZ SORIANO";
+  const curso = data.curso ? data.curso.toUpperCase() : "CURSO DE INFORMATICA";
 
   return (
     <div
@@ -41,9 +44,9 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
               <div className="flex flex-col w-full max-w-[600px] mt-4 ">
                 <h2 className="text-7xl font-extrabold text-[#9F2241]">CONSTANCIA</h2>
                 <p className="text-xl font-bold">a:</p>
-                <p className="text-3xl font-bold">{data.nombre || "SANTIAGO GONZALEZ SORIANO"}</p>
+                <p className="text-3xl font-bold">{nombre}</p>
                 <div className="mt-3 h-[9px] w-full bg-[#BC955C] bg-gradient-to-r from-[#BC955C] to-white"></div>
-                <p className="text-md text-justify mt-5">Por haber <span className="font-semibold">acreditado</span> satisfactoriamente el <span className="font-semibold">CURSO: {data.curso || "CURSO DE INFORMATICA"}</span>. En la modalidad presencial con una duracion de <span className="font-semibold">{data.horas || "20"}</span> horas realizado del {data.startDate || "2025"} al {data.endDate || "2025"}.</p>
+                <p className="text-md text-justify mt-5">Por haber <span className="font-semibold">acreditado</span> satisfactoriamente el <span className="font-semibold">CURSO: {curso}</span>. En la modalidad presencial con una duracion de <span className="font-semibold">{data.horas || "20"}</span> horas realizado {formatDateRange(data.startDate, data.endDate)}.</p>
               </div>
             </div>
           </div>
@@ -78,8 +81,22 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
 const formatDateRange = (start: string, end: string) => {
   if (!start || !end) return `del ${start || '...'} al ${end || '...'}`;
 
-  const dateStart = new Date(start);
-  const dateEnd = new Date(end);
+  let dateStart = new Date(start);
+  if (isNaN(dateStart.getTime())) {
+    const parsedStart = parseSpanishDate(start);
+    if (parsedStart) dateStart = new Date(parsedStart);
+  }
+
+  let dateEnd = new Date(end);
+  if (isNaN(dateEnd.getTime())) {
+    const parsedEnd = parseSpanishDate(end);
+    if (parsedEnd) dateEnd = new Date(parsedEnd);
+  }
+
+  // If we STILL couldn't parse it, return raw string to avoid Invalid Date NaN nonsense
+  if (isNaN(dateStart.getTime()) || isNaN(dateEnd.getTime())) {
+    return `del ${start} al ${end}`;
+  }
 
   const dayStart = dateStart.getUTCDate();
   const monthStart = dateStart.toLocaleString('es-MX', { month: 'long', timeZone: 'UTC' });
@@ -109,10 +126,19 @@ export const generateCertificateHtml = (
 ): string => {
   const assetPath = process.env.NEXT_PUBLIC_APP_URL || "";
 
+  const nombre = data.nombre ? data.nombre.toUpperCase() : "SANTIAGO GONZALEZ SORIANO";
+  const curso = data.curso ? data.curso.toUpperCase() : "CURSO DE INFORMATICA";
+
   const dateRangeText = formatDateRange(data.startDate, data.endDate);
 
   const fechaEmisionRaw = data.emision || new Date().toISOString();
-  const fechaEmision = new Date(fechaEmisionRaw).toLocaleDateString('es-MX', {
+  let emisionDate = new Date(fechaEmisionRaw);
+  if (isNaN(emisionDate.getTime())) {
+    const parsedEmision = parseSpanishDate(fechaEmisionRaw);
+    if (parsedEmision) emisionDate = new Date(parsedEmision);
+  }
+
+  const fechaEmision = isNaN(emisionDate.getTime()) ? fechaEmisionRaw : emisionDate.toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -161,9 +187,9 @@ export const generateCertificateHtml = (
                 <div class="flex flex-col w-full max-w-[600px] mt-4">
                   <h2 class="text-7xl font-extrabold text-[#9F2241]">CONSTANCIA</h2>
                   <p class="text-xl font-bold">a:</p>
-                  <p class="text-3xl font-bold">${data.nombre || "SANTIAGO GONZALEZ SORIANO"}</p>
+                  <p class="text-3xl font-bold">${nombre || "SANTIAGO GONZALEZ SORIANO"}</p>
                   <div class="mt-3 h-[9px] w-full bg-[#BC955C] bg-gradient-to-r from-[#BC955C] to-white"></div>
-                  <p class="text-base text-justify mt-5">Por haber <span class="font-semibold">acreditado</span> satisfactoriamente el <span class="font-semibold">CURSO: ${data.curso || "CURSO DE INFORMATICA"}</span>. En la modalidad presencial con una duracion de <span class="font-semibold">${data.horas || "20"}</span> horas realizado ${dateRangeText}.</p>
+                  <p class="text-base text-justify mt-5">Por haber <span class="font-semibold">acreditado</span> satisfactoriamente el <span class="font-semibold">CURSO: ${curso || "CURSO DE INFORMATICA"}</span>. En la modalidad presencial con una duracion de <span class="font-semibold">${data.horas || "20"}</span> horas realizado ${dateRangeText}.</p>
                 </div>
               </div>
             </div>
