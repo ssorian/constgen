@@ -131,7 +131,7 @@ export const generateCertificateHtml = (
 
   const dateRangeText = formatDateRange(data.startDate, data.endDate);
 
-  const fechaEmisionRaw = data.emision || new Date().toISOString();
+  const fechaEmisionRaw = data.endDate || new Date().toISOString();
   let emisionDate = new Date(fechaEmisionRaw);
   if (isNaN(emisionDate.getTime())) {
     const parsedEmision = parseSpanishDate(fechaEmisionRaw);
@@ -178,10 +178,10 @@ export const generateCertificateHtml = (
 
             <div class="ml-36 flex flex-col justify-center text-center text-black">
               <p class="text-sm leading-relaxed text-black">
-                "<span class="text-[#9F2241] font-extrabold">2025. </span>Año del Bicentenario de la Vida Municipal del Estado de Mexico"
+                "<span class="text-[#9F2241] font-extrabold">2025. </span>Año del Bicentenario de la Vida Municipal del Estado de México"
               </p>
               <div class="flex justify-center mt-2">
-                <p class="max-w-[670px] text-lg font-semibold">La Secretaria de Educacion, Ciencia, Tecnologia e Innovacion, a traves de la Escuela Normal de Sultepec, otorgan la presente:</p>
+                <p class="max-w-[670px] text-lg font-semibold">La Secretaría de Educación, Ciencia, Tecnología e Innovación, a través de la Escuela Normal de Sultepec, otorgan la presente:</p>
               </div>
               <div class="flex justify-center text-center">
                 <div class="flex flex-col w-full max-w-[600px] mt-4">
@@ -189,7 +189,7 @@ export const generateCertificateHtml = (
                   <p class="text-xl font-bold">a:</p>
                   <p class="text-3xl font-bold">${nombre || "SANTIAGO GONZALEZ SORIANO"}</p>
                   <div class="mt-3 h-[9px] w-full bg-[#BC955C] bg-gradient-to-r from-[#BC955C] to-white"></div>
-                  <p class="text-base text-justify mt-5">Por haber <span class="font-semibold">acreditado</span> satisfactoriamente el <span class="font-semibold">CURSO: ${curso || "CURSO DE INFORMATICA"}</span>. En la modalidad presencial con una duracion de <span class="font-semibold">${data.horas || "20"}</span> horas realizado ${dateRangeText}.</p>
+                  <p class="text-base text-justify mt-5">Por haber <span class="font-semibold">acreditado</span> satisfactoriamente el <span class="font-semibold">CURSO: ${curso || "CURSO DE INFORMATICA"}</span>. En la modalidad presencial con una duración de <span class="font-semibold">${data.horas || "20"}</span> horas realizado ${dateRangeText}.</p>
                 </div>
               </div>
             </div>
@@ -199,8 +199,8 @@ export const generateCertificateHtml = (
               <div class="relative px-3 flex flex-col justify-center text-center items-center text-black">
                 <img src="${images?.firma || assetPath + '/Firma.png'}" alt="Firma" width="160" class="absolute bottom-6" />
                 <div class="w-full h-[0.5px] bg-black"></div>
-                <p class="text-base">Mtro. Rafael Rodriguez Albíter</p>
-                <p class="text-base">Director escolar</p>
+                <p class="text-base">Mtro. Rafael Rodríguez Albíter</p>
+                <p class="text-base">Director Escolar</p>
               </div>
               <div class="relative text-xs flex flex-col text-black">
                 <p>Sultepec, Estado de México a ${fechaEmision}</p>
