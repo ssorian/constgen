@@ -20,8 +20,8 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
     <div
       className={`w-[11in] h-[8.5in] bg-[#9F2241] flex items-center justify-center relative ${montserrat.className}`}
     >
-      <div className=" w-[9.5in] h-[7in] border-[4px] border-[#BC955C] bg-gradient-to-br from-white to-gray-100 p-[0.1in] relative shadow-inner">
-        <img src="/Colibrii.png" alt="Colibri" width={300} className="absolute bottom-6 left-[-77]" />
+      <div className="w-[9.5in] h-[7in] border-[4px] border-[#BC955C] bg-gradient-to-br from-white to-gray-100 p-[0.1in] relative shadow-inner">
+        <img src="/Colibrii.png" alt="Colibri" width={300} className="absolute bottom-6 left-[-77px]" />
         <div className="h-full flex flex-col justify-between">
 
           {/* Header */}
@@ -30,23 +30,22 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
           </div>
 
           {/* Content */}
-          <div className="ml-36 flex flex-col justify-center  text-center text-black">
-            <p className="text-sm leading-relaxed text-black ">
-              "<span className="text-[#9F2241] font-extrabold">2025. </span>Año del Bicentenario de la Vida Municipal del Estado de Mexico"
+          <div className="ml-36 flex flex-col justify-center text-center text-black">
+            <p className="text-sm leading-relaxed text-black">
+              "<span className="text-[#9F2241] font-extrabold">2026. </span>Año del Humanismo Mexicano en el Estado de México"
             </p>
 
-            <div className="flex justify-center mt-2">
-              <p className="max-w-[670px] text-lg font-semibold">La Secretaria de Educacion, Ciencia, Tecnologia e Innovacion, a traves de la Escuela Normal de Sultepec, otorgan la presente:</p>
+            <div className="flex justify-center mt-1">
+              <p className="max-w-[670px] text-lg font-semibold">La Secretaría de Educación, Ciencia, Tecnología e Innovación, a través de la Escuela Normal de Sultepec, otorgan la presente:</p>
             </div>
 
-
-            <div className="flex justify-center text-center ">
-              <div className="flex flex-col w-full max-w-[600px] mt-4 ">
-                <h2 className="text-7xl font-extrabold text-[#9F2241]">CONSTANCIA</h2>
+            <div className="flex justify-center text-center">
+              <div className="flex flex-col w-full max-w-[600px] mt-2">
+                <h2 className="text-6xl font-extrabold text-[#9F2241]">CONSTANCIA</h2>
                 <p className="text-xl font-bold">a:</p>
-                <p className="text-3xl font-bold">{nombre}</p>
+                <p className={`${nombre.length > 30 ? 'text-2xl' : 'text-3xl'} font-bold`}>{nombre}</p>
                 <div className="mt-3 h-[9px] w-full bg-[#BC955C] bg-gradient-to-r from-[#BC955C] to-white"></div>
-                <p className="text-md text-justify mt-5">Por haber <span className="font-semibold">acreditado</span> satisfactoriamente el <span className="font-semibold">CURSO: {curso}</span>. En la modalidad presencial con una duracion de <span className="font-semibold">{data.horas || "20"}</span> horas realizado {formatDateRange(data.startDate, data.endDate)}.</p>
+                <p className="text-base text-justify mt-5">Por haber <span className="font-semibold">acreditado</span> satisfactoriamente el <span className="font-semibold">CURSO: {curso}</span>. En la modalidad presencial con una duración de <span className="font-semibold">{data.horas || "20"}</span> horas realizado {formatDateRange(data.startDate, data.endDate)}.</p>
               </div>
             </div>
           </div>
@@ -56,25 +55,23 @@ export const CertificateTemplate = ({ data }: CertificateTemplateProps) => {
             <div className="relative px-3 flex flex-col justify-center text-center items-center text-black">
               <img src="Firma.png" alt="Firma" width={160} className="absolute bottom-6" />
               <div className="w-full h-[0.5px] bg-black"></div>
-              <p className="text-md">Mtro. Rafael Rodriguez Albíter</p>
-              <p className="text-md">Director escolar</p>
+              <p className="text-base font-bold">Mtro. Rafael Rodríguez Albíter</p>
+              <p className="text-base">Director Escolar</p>
             </div>
             <div className="relative text-xs flex flex-col text-black">
               <p>Sultepec, Estado de México a 2025</p>
               <img src="Logos.png" alt="Logos" width={300} />
               {data.qrCodeDataUrl && (
-                <img src={data.qrCodeDataUrl} className="w-32 h-32 absolute border border-gray-300 bg-white bottom-7.5 right-4" alt="QR Code" />
+                <img src={data.qrCodeDataUrl} className="w-32 h-32 absolute border border-gray-300 bg-white bottom-[30px] right-4" alt="QR Code" />
               )}
-
               <p className="text-[11px] text-gray-500 font-mono">CUV: {data.cuv}</p>
             </div>
           </footer>
 
-
         </div>
       </div>
       <img src="Flores.png" alt="Flores" className="absolute bottom-0 left-0" />
-    </div >
+    </div>
   );
 };
 
@@ -178,17 +175,16 @@ export const generateCertificateHtml = (
 
             <div class="ml-36 flex flex-col justify-center text-center text-black">
               <p class="text-sm leading-relaxed text-black">
-                "<span class="text-[#9F2241] font-extrabold">2025. </span>Año del Bicentenario de la Vida Municipal del Estado de México"
+                "<span class="text-[#9F2241] font-extrabold">2026. </span>Año del Humanismo Mexicano en el Estado de México"
               </p>
-              <div class="flex justify-center mt-2">
+              <div class="flex justify-center mt-1">
                 <p class="max-w-[670px] text-lg font-semibold">La Secretaría de Educación, Ciencia, Tecnología e Innovación, a través de la Escuela Normal de Sultepec, otorgan la presente:</p>
               </div>
               <div class="flex justify-center text-center">
-                <div class="flex flex-col w-full max-w-[600px] mt-4">
-                  <h2 class="text-7xl font-extrabold text-[#9F2241]">CONSTANCIA</h2>
+                <div class="flex flex-col w-full max-w-[600px] mt-2">
+                  <h2 class="text-6xl font-extrabold text-[#9F2241]">CONSTANCIA</h2>
                   <p class="text-xl font-bold">a:</p>
-                  <p class="text-3xl font-bold">${nombre || "SANTIAGO GONZALEZ SORIANO"}</p>
-                  <div class="mt-3 h-[9px] w-full bg-[#BC955C] bg-gradient-to-r from-[#BC955C] to-white"></div>
+<p class="${nombre.length > 30 ? 'text-2xl' : 'text-3xl'} font-bold">${nombre || "SANTIAGO GONZALEZ SORIANO"}</p>                  <div class="mt-3 h-[9px] w-full bg-[#BC955C] bg-gradient-to-r from-[#BC955C] to-white"></div>
                   <p class="text-base text-justify mt-5">Por haber <span class="font-semibold">acreditado</span> satisfactoriamente el <span class="font-semibold">CURSO: ${curso || "CURSO DE INFORMATICA"}</span>. En la modalidad presencial con una duración de <span class="font-semibold">${data.horas || "20"}</span> horas realizado ${dateRangeText}.</p>
                 </div>
               </div>
@@ -199,8 +195,8 @@ export const generateCertificateHtml = (
               <div class="relative px-3 flex flex-col justify-center text-center items-center text-black">
                 <img src="${images?.firma || assetPath + '/Firma.png'}" alt="Firma" width="160" class="absolute bottom-6" />
                 <div class="w-full h-[0.5px] bg-black"></div>
-                <p class="text-base">Mtro. Rafael Rodríguez Albíter</p>
-                <p class="text-base">Director Escolar</p>
+                <p class="text-base ">Mtro. Rafael Rodríguez Albíter</p>
+                <p class="text-base font-bold">Director Escolar</p>
               </div>
               <div class="relative text-xs flex flex-col text-black">
                 <p>Sultepec, Estado de México a ${fechaEmision}</p>

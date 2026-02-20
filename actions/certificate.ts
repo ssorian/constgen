@@ -1,7 +1,7 @@
 'use server';
 
 import QRCode from 'qrcode';
-import { generatePdf } from '@/lib/generatePdf';
+import { generatePdf, generateBulkPdfs } from '@/lib/generatePdf';
 import { CertificateData } from '@/lib/types/certificate';
 import generateRandomKey from '@/lib/utils/generateRandomKey';
 import { uploadToBlob, uploadBulkToBlob, BlobUploadResult } from './blob';
@@ -145,14 +145,17 @@ export async function generateAndUploadBulk(
         certsWithCuv.push(await ensureCuv(certs[i], baseIncrement + i));
     }
 
-    const prepared = await Promise.all(
-        certsWithCuv.map(async (certData) => {
-            const certWithQr = await attachQrCode(certData);
-            const pdfBuffer = await generatePdf(certWithQr);
-            const fileName = getCertificateFilename(certWithQr);
-            return { buffer: pdfBuffer, fileName, certData };
-        }),
+    const certsWithQr: CertificateData[] = await Promise.all(
+        certsWithCuv.map(cert => attachQrCode(cert))
     );
+
+    // Call the optimized bulk PDF generator (runs 1 browser, 1 base64 read for the whole batch)
+    const pdfBuffers = await generateBulkPdfs(certsWithQr);
+
+    const prepared = certsWithQr.map((certData, i) => {
+        const fileName = getCertificateFilename(certData);
+        return { buffer: pdfBuffers[i], fileName, certData };
+    });
 
     const blobResults: BlobUploadResult[] = await uploadBulkToBlob(
         prepared.map(({ buffer, fileName }) => ({ buffer, fileName })),

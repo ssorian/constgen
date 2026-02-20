@@ -68,21 +68,33 @@ export async function uploadBulkToBlob(
         throw new Error('No hay archivos para subir');
     }
 
-    const results: BlobUploadResult[] = [];
-
-    for (const file of files) {
+    const uploadPromises = files.map(async (file) => {
         try {
             const { url } = await uploadToBlob(file.buffer, file.fileName);
-            results.push({ fileName: file.fileName, success: true, url });
+            return { fileName: file.fileName, success: true, url };
         } catch (error: any) {
             console.error(`Error subiendo ${file.fileName}:`, error);
-            results.push({
+            return {
                 fileName: file.fileName,
                 success: false,
                 error: error?.message ?? 'Error desconocido',
-            });
+            };
         }
-    }
+    });
+
+    const settledResults = await Promise.allSettled(uploadPromises);
+
+    const results: BlobUploadResult[] = settledResults.map(result => {
+        if (result.status === 'fulfilled') {
+            return result.value as BlobUploadResult;
+        } else {
+            return {
+                fileName: 'Unknown',
+                success: false,
+                error: result.reason?.message ?? 'Error crítico desconocido en promesa'
+            } as BlobUploadResult;
+        }
+    });
 
     return results;
 }

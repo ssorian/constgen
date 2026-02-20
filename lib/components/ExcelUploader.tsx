@@ -107,8 +107,8 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
                         return;
                     }
 
-                    // Read all rows (skip header), limit to 5 per sheet for development
-                    const dataRows = jsonData.slice(1, 6);
+                    // Read all rows (skip header & previous empty rows)
+                    const dataRows = jsonData.slice(1); // Assuming header is always at index 0
 
                     dataRows.forEach((row) => {
 
