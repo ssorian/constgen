@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import CUVValidator from '@/lib/components/CUVValidator';
+import Navigation from '@/lib/components/Navigation';
 
 export const metadata: Metadata = {
     title: 'Escuela Normal de Sultepec',
@@ -13,43 +14,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
     return (
         <div className="font-sans bg-[#f4f4f4] text-[#333] leading-relaxed overflow-x-hidden min-h-screen">
-            {/* Mobile overlay */}
-            <div className="hidden fixed inset-0 bg-black/50 z-[999] transition-opacity" id="overlayEl" />
-
-            {/* Mobile sidebar */}
-            <aside className="md:hidden fixed top-0 left-[-250px] w-[250px] h-full bg-[#691c32] text-white shadow-[2px_0_5px_rgba(0,0,0,0.5)] transition-all duration-300 z-[1000]" id="mobileSidebar">
-                <div className="p-5 text-center bg-[#4a1324]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/Img/EscNom.png" alt="Logo de la Escuela Normal de Sultepec" className="max-w-[80px] mb-2.5 mx-auto block" />
-                    <h1 className="font-['Arial_Black',sans-serif] font-bold text-[1.2em] m-0">Escuela Normal de Sultepec</h1>
-                </div>
-                <div className="flex flex-col">
-                    <a href="#inicio" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a] bg-[#8b2a4a]">Inicio</a>
-                    <Link href="/login" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Iniciar Sesión</Link>
-                    <a href="#acerca" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Acerca de</a>
-                    <a href="#misyvis" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Misión y Visión</a>
-                    <a href="#oferta" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Oferta Educativa</a>
-                    <a href="#cuv" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Validador de Constancias</a>
-                    <a href="#contacto" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Contacto</a>
-                </div>
-                <button id="closeMenuButton" className="hidden" />
-            </aside>
-
-            <header className="bg-[#691c32] text-white py-2.5 px-5 text-center relative flex justify-between items-center md:block">
-                <button className="md:hidden text-[30px] bg-transparent border-none text-white cursor-pointer p-1.5 focus:outline-none" id="openMenuButton">☰</button>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/Img/EscNom.png" alt="Logo de la Escuela Normal de Sultepec" className="block max-w-[90%] h-auto mx-auto md:max-w-none md:inline" />
-            </header>
-
-            <nav className="bg-[#4a1324] hidden md:flex justify-center gap-5 p-2.5 flex-wrap">
-                <a href="#inicio" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a] bg-[#8b2a4a]">Inicio</a>
-                <Link href="/login" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Iniciar Sesión</Link>
-                <a href="#acerca" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Acerca de</a>
-                <a href="#misyvis" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Misión y Visión</a>
-                <a href="#oferta" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Oferta Educativa</a>
-                <a href="#cuv" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Validador de Constancias</a>
-                <a href="#contacto" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Contacto</a>
-            </nav>
+            <Navigation />
 
             <main className="max-w-[1200px] my-5 mx-auto p-5 md:p-8 bg-white md:rounded-lg md:shadow-[0_0_15px_rgba(0,0,0,0.05)] w-full box-border">
                 {/* ─── Hero ─────────────────────────────────────────────── */}
@@ -175,9 +140,6 @@ export default function HomePage() {
             <footer className="bg-[#691c32] text-white text-center p-6 w-full">
                 <p className="opacity-90">© 2025 Escuela Normal de Sultepec. Todos los derechos reservados.</p>
             </footer>
-
-            {/* Legacy script for mobile menu toggle — handles DOM interactions */}
-            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         </div>
     );
 }
