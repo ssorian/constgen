@@ -1,414 +1,183 @@
-'use client';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import CUVValidator from '@/lib/components/CUVValidator';
 
-import { useState, useEffect } from 'react';
-import CertificateForm from '@/lib/components/CertificateForm';
-import CertificatePreview from '@/lib/components/CertificatePreview';
-import ExcelUploader from '@/lib/components/ExcelUploader';
-import { CertificateData } from '@/lib/types/certificate';
-import { generateAndUpload, generateAndUploadBulk, CertificateUploadResult } from '@/actions/certificate';
-import QRCode from 'qrcode';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tipos locales
-// ─────────────────────────────────────────────────────────────────────────────
-
-type UploadStatus = { name: string; status: 'success' | 'error'; url?: string };
-type ViewMode = 'single' | 'batch';
-
-const EMPTY_CERTIFICATE: CertificateData = {
-    nombre: '',
-    curso: '',
-    cuv: '',
-    horas: 0,
-    startDate: '',
-    endDate: '',
-    matricula: '',
-    curp: '',
-    emision: '',
-    vencimiento: '',
+export const metadata: Metadata = {
+    title: 'Escuela Normal de Sultepec',
+    description: 'Página oficial de la Escuela Normal de Sultepec. Información educativa, oferta académica y búsqueda de certificados.',
+    other: {
+        'google-site-verification': 'cV-i4O51LHHkjvGAuxQG3hyMKZIlORVbveLSHgbqPMg',
+    },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Componente principal
-// ─────────────────────────────────────────────────────────────────────────────
-
-export default function ConstanciaPage() {
-    // ── Estado ───────────────────────────────────────────────────────────────
-    const [certificateData, setCertificateData] = useState<CertificateData>(EMPTY_CERTIFICATE);
-    const [importedCertificates, setImportedCertificates] = useState<CertificateData[]>([]);
-    const [viewMode, setViewMode] = useState<ViewMode>('single');
-    const [uploadResults, setUploadResults] = useState<UploadStatus[]>([]);
-    const [isUploading, setIsUploading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-    // ── QR preview (regenera con debounce al cambiar la validationUrl) ───────
-    useEffect(() => {
-        const controller = new AbortController();
-
-        const generatePreviewQR = async () => {
-            const url = certificateData.validationUrl || 'https://constgen.example.com/preview-placeholder';
-            const isDraft = !certificateData.validationUrl;
-
-            try {
-                const qrDataUrl = await QRCode.toDataURL(url, {
-                    width: 200,
-                    margin: 1,
-                    color: {
-                        dark: isDraft ? '#000000ff' : '#000000ff',
-                        light: '#ffffff',
-                    },
-                });
-
-                if (!controller.signal.aborted && qrDataUrl !== certificateData.qrCodeDataUrl) {
-                    setCertificateData((prev) => ({ ...prev, qrCodeDataUrl: qrDataUrl }));
-                }
-            } catch (err) {
-                console.error('Error generando QR de vista previa:', err);
-            }
-        };
-
-        const timeout = setTimeout(generatePreviewQR, 500);
-        return () => {
-            clearTimeout(timeout);
-            controller.abort();
-        };
-    }, [certificateData.validationUrl, certificateData.qrCodeDataUrl]);
-
-    // ── Validación de campos del formulario individual ────────────────────────
-    const validateSingleForm = (): boolean => {
-        const { nombre, curso, horas, matricula, curp, startDate, endDate, emision, vencimiento } = certificateData;
-
-        if (!nombre || !curso || !horas || !matricula || !curp || !startDate || !endDate || !emision || !vencimiento) {
-            setError('Por favor, completa todos los campos (incluyendo fechas de inicio, fin, emisión y vencimiento) antes de continuar.');
-            return false;
-        }
-
-        if (curp.length !== 18) {
-            setError('La CURP debe tener exactamente 18 caracteres.');
-            return false;
-        }
-
-        return true;
-    };
-
-    // ── Importar desde Excel ──────────────────────────────────────────────────
-    const handleDataImported = (data: any[]) => {
-        const formatted: CertificateData[] = data.map((item) => ({
-            nombre: String(item.nombre ?? '').toUpperCase(),
-            curso: String(item.curso ?? '').toUpperCase(),
-            cuv: item.cuv ?? '',
-            curp: item.curp,
-            matricula: item.matricula,
-            horas: item.horas,
-            startDate: item.startDate ?? '',
-            endDate: item.endDate ?? '',
-            // Si el excel trae fechas de emision/vencimiento, usarlas, sino dejar vacío o defaults
-            emision: item.emision ?? new Date().toISOString().split('T')[0],
-            vencimiento: item.vencimiento ?? '',
-            validationUrl: '',
-            isImported: true,
-        }));
-
-        setImportedCertificates(formatted);
-        setViewMode('batch');
-        if (formatted.length > 0) setCertificateData(formatted[0]);
-    };
-
-    const handleSelectCertificate = (cert: CertificateData) => {
-        setCertificateData(cert);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    // ── Subida individual ─────────────────────────────────────────────────────
-    const handleUploadSingle = async () => {
-        if (!validateSingleForm()) return;
-
-        setIsUploading(true);
-        setError(null);
-        setSuccessMessage(null);
-
-        try {
-            const { url } = await generateAndUpload(certificateData);
-            setSuccessMessage(`Constancia subida correctamente. URL: ${url}`);
-        } catch (err: any) {
-            setError(err?.message || 'Error al subir la constancia.');
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    // ── Subida masiva ─────────────────────────────────────────────────────────
-    const handleUploadAll = async () => {
-        if (importedCertificates.length === 0) {
-            setError('No hay constancias para procesar.');
-            return;
-        }
-
-        setIsUploading(true);
-        setError(null);
-        setUploadResults([]);
-
-        try {
-            const results: CertificateUploadResult[] = await generateAndUploadBulk(importedCertificates);
-
-            const statuses: UploadStatus[] = results.map((r) => ({
-                name: r.nombre,
-                status: r.success ? 'success' : 'error',
-                url: r.url,
-            }));
-
-            setUploadResults(statuses);
-
-            const successCount = statuses.filter((r) => r.status === 'success').length;
-            const failCount = statuses.length - successCount;
-            setSuccessMessage(`Proceso completado — Subidos: ${successCount}, Fallidos: ${failCount}`);
-        } catch (err: any) {
-            setError(err?.message || 'Error durante la carga masiva.');
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Render
-    // ─────────────────────────────────────────────────────────────────────────
-
-    const progressPercent =
-        importedCertificates.length > 0
-            ? (uploadResults.length / importedCertificates.length) * 100
-            : 0;
-
+export default function HomePage() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto space-y-8">
+        <div className="font-sans bg-[#f4f4f4] text-[#333] leading-relaxed overflow-x-hidden min-h-screen">
+            {/* Mobile overlay */}
+            <div className="hidden fixed inset-0 bg-black/50 z-[999] transition-opacity" id="overlayEl" />
 
-                {/* ── Encabezado ── */}
-                <header className="text-center">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">Generador de Constancias</h1>
-                    <p className="text-lg text-gray-600">
-                        Completa el formulario o importa un Excel para subir constancias a Azure Blob Storage.
+            {/* Mobile sidebar */}
+            <aside className="md:hidden fixed top-0 left-[-250px] w-[250px] h-full bg-[#691c32] text-white shadow-[2px_0_5px_rgba(0,0,0,0.5)] transition-all duration-300 z-[1000]" id="mobileSidebar">
+                <div className="p-5 text-center bg-[#4a1324]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/Img/EscNom.png" alt="Logo de la Escuela Normal de Sultepec" className="max-w-[80px] mb-2.5 mx-auto block" />
+                    <h1 className="font-['Arial_Black',sans-serif] font-bold text-[1.2em] m-0">Escuela Normal de Sultepec</h1>
+                </div>
+                <div className="flex flex-col">
+                    <a href="#inicio" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a] bg-[#8b2a4a]">Inicio</a>
+                    <Link href="/login" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Iniciar Sesión</Link>
+                    <a href="#acerca" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Acerca de</a>
+                    <a href="#misyvis" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Misión y Visión</a>
+                    <a href="#oferta" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Oferta Educativa</a>
+                    <a href="#cuv" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Validador de Constancias</a>
+                    <a href="#contacto" className="block text-white no-underline py-[15px] px-[20px] font-bold border-b border-[#4a1324] transition-colors duration-300 hover:bg-[#8b2a4a]">Contacto</a>
+                </div>
+                <button id="closeMenuButton" className="hidden" />
+            </aside>
+
+            <header className="bg-[#691c32] text-white py-2.5 px-5 text-center relative flex justify-between items-center md:block">
+                <button className="md:hidden text-[30px] bg-transparent border-none text-white cursor-pointer p-1.5 focus:outline-none" id="openMenuButton">☰</button>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/Img/EscNom.png" alt="Logo de la Escuela Normal de Sultepec" className="block max-w-[90%] h-auto mx-auto md:max-w-none md:inline" />
+            </header>
+
+            <nav className="bg-[#4a1324] hidden md:flex justify-center gap-5 p-2.5 flex-wrap">
+                <a href="#inicio" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a] bg-[#8b2a4a]">Inicio</a>
+                <Link href="/login" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Iniciar Sesión</Link>
+                <a href="#acerca" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Acerca de</a>
+                <a href="#misyvis" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Misión y Visión</a>
+                <a href="#oferta" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Oferta Educativa</a>
+                <a href="#cuv" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Validador de Constancias</a>
+                <a href="#contacto" className="text-white no-underline font-bold py-2 px-3 rounded transition-colors duration-300 hover:bg-[#8b2a4a]">Contacto</a>
+            </nav>
+
+            <main className="max-w-[1200px] my-5 mx-auto p-5 md:p-8 bg-white md:rounded-lg md:shadow-[0_0_15px_rgba(0,0,0,0.05)] w-full box-border">
+                {/* ─── Hero ─────────────────────────────────────────────── */}
+                <section id="inicio" className="text-center py-10 px-5 bg-[#691c32] text-white rounded-lg mb-10 shadow-[0_0_10px_rgba(0,0,0,0.1)]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/Img/LOGO.png" alt="Logo de la Escuela Normal de Sultepec" className="max-w-[200px] mb-5 mx-auto block" />
+                    <h2 className="text-[#d5b981] border-none pb-0 text-2xl md:text-3xl font-bold mb-4">Bienvenidos a la Escuela Normal de Sultepec</h2>
+                    <p className="max-w-3xl mx-auto text-lg opacity-90">
+                        Formamos estudiantes con valores, conocimientos y habilidades para el futuro. Nuestra institución se dedica a
+                        proporcionar una educación de calidad en un entorno seguro y motivador.
                     </p>
-                </header>
+                </section>
 
-                {/* ── Importar desde Excel ── */}
-                <ExcelUploader onDataImported={handleDataImported} />
-
-                {/* ── Lista de constancias importadas ── */}
-                {importedCertificates.length > 0 && (
-                    <ImportedCertificatesPanel
-                        certificates={importedCertificates}
-                        uploadResults={uploadResults}
-                        viewMode={viewMode}
-                        isUploading={isUploading}
-                        progressPercent={progressPercent}
-                        onToggleViewMode={() => setViewMode(viewMode === 'single' ? 'batch' : 'single')}
-                        onUploadAll={handleUploadAll}
-                        onSelectCertificate={handleSelectCertificate}
-                    />
-                )}
-
-                {/* ── Formulario + Vista previa ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-4 bg-white rounded-xl shadow-xl p-8">
-                        <CertificateForm data={certificateData} onChange={setCertificateData} />
-                    </div>
-                    <div className="lg:col-span-8 bg-white rounded-xl shadow-xl p-8">
-                        <CertificatePreview data={certificateData} />
-                    </div>
-                </div>
-
-                {/* ── Acciones y mensajes ── */}
-                <div className="text-center flex flex-col items-center gap-4">
-                    <UploadButton isUploading={isUploading} onClick={handleUploadSingle} />
-                    {error && <AlertBox type="error" message={error} />}
-                    {successMessage && <AlertBox type="success" message={successMessage} />}
-                </div>
-
-            </div>
-        </div>
-    );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Sub-componentes de UI (definidos en el mismo archivo para mantenerlo compacto)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Panel con la tabla de constancias importadas ──────────────────────────────
-
-interface ImportedCertificatesPanelProps {
-    certificates: CertificateData[];
-    uploadResults: UploadStatus[];
-    viewMode: ViewMode;
-    isUploading: boolean;
-    progressPercent: number;
-    onToggleViewMode: () => void;
-    onUploadAll: () => void;
-    onSelectCertificate: (cert: CertificateData) => void;
-}
-
-function ImportedCertificatesPanel({
-    certificates,
-    uploadResults,
-    viewMode,
-    isUploading,
-    progressPercent,
-    onToggleViewMode,
-    onUploadAll,
-    onSelectCertificate,
-}: ImportedCertificatesPanelProps) {
-    return (
-        <div className="p-4 bg-white rounded-lg shadow">
-            {/* Cabecera del panel */}
-            <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                    Constancias Importadas ({certificates.length})
-                </h3>
-                <div className="flex gap-2">
-                    {viewMode === 'batch' && (
-                        <button
-                            onClick={onUploadAll}
-                            disabled={isUploading}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        >
-                            {isUploading ? 'Subiendo...' : 'Subir Todo a Azure'}
-                        </button>
-                    )}
-                    <button
-                        onClick={onToggleViewMode}
-                        className="text-blue-600 hover:text-blue-800 font-medium px-3 py-2"
-                    >
-                        {viewMode === 'single' ? 'Ver Lista' : 'Ocultar Lista'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Barra de progreso */}
-            {uploadResults.length > 0 && (
-                <div className="mb-4">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                            style={{ width: `${progressPercent}%` }}
-                        />
-                    </div>
-                    <p className="text-xs text-center mt-1 text-gray-500">
-                        {uploadResults.length} de {certificates.length} procesados
+                {/* ─── Acerca de ────────────────────────────────────────── */}
+                <section id="acerca" className="mb-10">
+                    <h2 className="text-[#691c32] border-b-2 border-[#691c32] pb-2.5 mb-5 text-2xl font-bold">Acerca de la Escuela</h2>
+                    <p className="mb-4 text-justify">
+                        Esta institución fue fundada el 1° de septiembre de 1974, cuando por acuerdo del poder ejecutivo estatal, se
+                        establece la Escuela Normal No. 13 de Sultepec, gracias al impulso que el Profr. Carlos Hank González,
+                        Gobernador del Estado de México, da al normalismo en la entidad; su primera directora fue la Profra. María del
+                        Socorro Carbajal Rodríguez, se ubicó en la cabecera municipal de Sultepec, pueblo con fisonomía típica colonial
+                        que permite gozar de hermosos paisajes naturales, de monumentos y acontecimientos históricos, se caracteriza por
+                        sus casas cubiertas con teja roja, por sus calles empedradas y sus románticos callejones.
                     </p>
-                </div>
-            )}
+                    <p className="mb-4 text-justify">
+                        En el ámbito educativo para atender a la población de nivel superior cuenta con una Unidad de Estudios
+                        Superiores de la Universidad Mexiquense del Bicentenario y la Escuela Normal de Sultepec, que hasta la fecha
+                        tiene un total de 300 egresados como profesores de Educación Primaria y 1161 como licenciados en Educación en
+                        sus diferentes especialidades (Primaria, Telesecundaria, Tele-Educación, Ciencias Sociales, Ciencias Naturales,
+                        Administración y Español). Alberga en sus aulas a la Juventud inquieta y estudiosa de la región que comprende
+                        los municipios de Sultepec, Texcaltitlán, Almoloya de Alquisiras, Zacualpan y actualmente se han incorporado
+                        alumnos de San Simón de Guerrero, Tejupilco, Amatepec y Tlatlaya.
+                    </p>
+                    <p className="mb-6 text-justify">
+                        El programa educativo que actualmente ofrece es el de La Licenciatura en Educación Secundaria con Especialidad
+                        en Español (sexto y octavo semestre), Licenciatura en Enseñanza y Aprendizaje en Telesecundaria y Licenciatura
+                        en Educación Primaria, con una matricula total de 356 alumnos, con una planta de personal integrada por 36
+                        docentes (3 directivos, 7 investigadores, 15 pedagogos &ldquo;A&rdquo;, 9 profesores horas clase y dos formadores de
+                        inglés). La institución se ubica en domicilio conocido Unidad Deportiva S/N, Barrio de Coaxusco, Sultepec
+                        México; C.P. 51600, Tel. 017161480224, correo electrónico normalsultepec@edugem.gob.mx
+                    </p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/Img/todos.jpg" className="w-full h-auto rounded-lg shadow-sm" alt="Foto de imágenes Docentes Escuela Normal de Sultepec" />
+                </section>
 
-            {/* Tabla */}
-            {viewMode === 'batch' && (
-                <div className="overflow-x-auto max-h-60 overflow-y-auto border rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 sticky top-0">
-                            <tr>
-                                {['Nombre', 'Curso', 'Estado', 'Acciones'].map((col) => (
-                                    <th
-                                        key={col}
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                                    >
-                                        {col}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {certificates.map((cert, idx) => {
-                                const result = uploadResults.find((r) => r.name === cert.nombre);
-                                return (
-                                    <tr
-                                        key={idx}
-                                        className="hover:bg-gray-50 cursor-pointer"
-                                        onClick={() => onSelectCertificate(cert)}
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{cert.nombre}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cert.curso}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            {result ? (
-                                                result.status === 'success'
-                                                    ? <span className="text-green-600">Subido ✅</span>
-                                                    : <span className="text-red-600">Error ❌</span>
-                                            ) : (
-                                                <span className="text-gray-400">Pendiente</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <div className="flex items-center gap-3">
-                                                <button
-                                                    className="text-blue-600 hover:text-blue-800"
-                                                    onClick={(e) => { e.stopPropagation(); onSelectCertificate(cert); }}
-                                                >
-                                                    Ver
-                                                </button>
-                                                {result?.url && (
-                                                    <a
-                                                        href={result.url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-green-600 hover:text-green-800"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        Abrir ↗
-                                                    </a>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
-    );
-}
+                {/* ─── Misión y Visión ──────────────────────────────────── */}
+                <section id="misyvis" className="mb-10">
+                    <h2 className="text-[#691c32] border-b-2 border-[#691c32] pb-2.5 mb-5 text-2xl font-bold">Misión y Visión</h2>
+                    <h3 className="text-[#d5b981] text-xl font-bold mb-3">Misión Estatal</h3>
+                    <p className="mb-6 text-justify">
+                        La Subdirección de Escuelas Normales gestiona, organiza y administra, las condiciones académico-administrativas
+                        para la formación integral de profesionales de la Educación en los niveles de Licenciatura, especialidad,
+                        maestría y doctorado a través de modelos educativos innovadores, pertinentes y aprendizajes relevantes, que
+                        contribuyan al desarrollo de la educación obligatoria con inclusión, equidad y excelencia educativa.
+                    </p>
+                    <h3 className="text-[#d5b981] text-xl font-bold mb-3">Visión Estatal</h3>
+                    <p className="mb-2 text-justify">
+                        En el 2030 la Autoridad Educativa Estatal de las ENPEM consolidará ofertas educativas de excelencia para la
+                        formación inicial y continua con programas educativos acreditados y procesos certificados, reconocidos a nivel
+                        nacional e internacional, sustentados en el diseño y análisis curricular, investigación, innovación, cuerpos
+                        académicos, redes de colaboración, y extensión con impacto social; en instituciones caracterizadas por procesos
+                        eficientes de gestión, planeación participativa, estratégica y prospectiva que cuentan con una infraestructura
+                        física, académica y tecnológica optima que fortalece el trabajo colegiado, certificadas en tecnologías y
+                        lenguas, transparencia, y rendición de cuentas, con una perspectiva de género igualdad sustantiva e inclusión.
+                    </p>
+                </section>
 
-// ── Botón de subida individual ────────────────────────────────────────────────
+                {/* ─── Oferta Educativa ─────────────────────────────────── */}
+                <section id="oferta" className="mb-10">
+                    <h2 className="text-[#691c32] border-b-2 border-[#691c32] pb-2.5 mb-5 text-2xl font-bold">Oferta Educativa</h2>
+                    <p className="mb-3">Ofrecemos las siguientes licenciaturas:</p>
+                    <ul className="list-disc pl-6 space-y-2 mb-2">
+                        <li>Licenciatura en Educación Primaria</li>
+                        <li>Licenciatura en Enseñanza y Aprendizaje en Telesecundaria</li>
+                        <li>Licenciatura en Español</li>
+                    </ul>
+                </section>
 
-function UploadButton({ isUploading, onClick }: { isUploading: boolean; onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            disabled={isUploading}
-            className={`
-                px-8 py-4 rounded-lg font-semibold text-white text-lg
-                transition-all transform hover:scale-105 active:scale-95
-                shadow-lg hover:shadow-xl
-                ${isUploading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'}
-            `}
-        >
-            {isUploading ? 'Subiendo...' : 'Generar y Subir a Azure Blob'}
-        </button>
-    );
-}
+                {/* ─── Validador de Constancias ─────────────────────────── */}
+                <section id="cuv" className="mb-10 p-6 md:p-8 bg-[#f9f9f9] rounded-xl border border-gray-100">
+                    <div className="text-center mb-6">
+                        <h2 className="text-[#691c32] pb-2.5 mb-2 text-2xl font-bold inline-block border-b-2 border-[#691c32]">Validador de Constancias</h2>
+                        <p className="text-gray-600">Ingresa el CUV (Clave Única de Validación) de la constancia.</p>
+                    </div>
+                    <CUVValidator />
+                </section>
 
-// ── Alertas de error / éxito ──────────────────────────────────────────────────
+                {/* ─── Contacto ─────────────────────────────────────────── */}
+                <section id="contacto" className="mb-10 bg-gray-50 p-6 md:p-8 rounded-xl border border-gray-100">
+                    <h2 className="text-[#691c32] border-b-2 border-[#691c32] pb-2.5 mb-5 text-2xl font-bold">Contacto</h2>
+                    <div className="mb-6 space-y-2">
+                        <p><strong>Dirección:</strong> Unidad Deportiva S/N. Barrio Coaxusco. C.P. 51600. Sultepec, Estado de México.</p>
+                        <p><strong>Teléfono:</strong> (716)1480224</p>
+                        <p><strong>Email:</strong> normalsultepec@edugem.gob.mx</p>
+                        <p><strong>Horarios de oficina:</strong> Lunes a viernes de 7:00 a 16 horas.</p>
+                    </div>
 
-function AlertBox({ type, message }: { type: 'error' | 'success'; message: string }) {
-    const styles = {
-        error: {
-            wrapper: 'bg-red-50 border-red-200',
-            title: 'text-red-700',
-            body: 'text-red-600',
-            label: 'Error',
-        },
-        success: {
-            wrapper: 'bg-green-50 border-green-200',
-            title: 'text-green-700',
-            body: 'text-green-600',
-            label: '¡Éxito!',
-        },
-    }[type];
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <h3 className="text-[#d5b981] font-bold text-lg mb-2">Dirección Escolar</h3>
+                            <p className="mb-1 text-sm font-medium">Mtro. Rafael Rodríguez Albíter</p>
+                            <p className="mb-1 text-sm text-[#691c32] hover:underline">normalsultepec@edugem.gob.mx</p>
+                            <p className="text-sm">Teléfono: (716) 1480 224.</p>
+                        </div>
 
-    return (
-        <div className={`mt-2 p-4 border rounded-lg w-full max-w-2xl ${styles.wrapper}`}>
-            <p className={`font-medium ${styles.title}`}>{styles.label}</p>
-            <p className={`text-sm ${styles.body}`}>{message}</p>
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <h3 className="text-[#d5b981] font-bold text-lg mb-2">Subdirección Académica</h3>
+                            <p className="mb-1 text-sm font-medium">Mtra. Minerva Flores Barón</p>
+                            <p className="mb-1 text-sm text-[#691c32] hover:underline">minerva.flores@normalsultepec.edu.mx</p>
+                            <p className="text-sm">Teléfono: (716) 1480 224.</p>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                            <h3 className="text-[#d5b981] font-bold text-lg mb-2">Subdirección Administrativa</h3>
+                            <p className="mb-1 text-sm font-medium">Lic. Jaime Albiter Valdez</p>
+                            <p className="mb-1 text-sm text-[#691c32] hover:underline">jaime.albiter@normalsultepec.edu.mx</p>
+                            <p className="text-sm">Teléfono: (716) 1480 224.</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer className="bg-[#691c32] text-white text-center p-6 w-full">
+                <p className="opacity-90">© 2025 Escuela Normal de Sultepec. Todos los derechos reservados.</p>
+            </footer>
+
+            {/* Legacy script for mobile menu toggle — handles DOM interactions */}
+            {/* eslint-disable-next-line @next/next/no-sync-scripts */}
         </div>
     );
 }

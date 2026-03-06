@@ -171,8 +171,8 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${isDragging
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                ? 'border-[#d5b981] bg-[#d5b981]/10'
+                : 'border-gray-300 hover:border-[#d5b981] hover:bg-gray-50'
                 }`}
         >
             <input
@@ -185,7 +185,7 @@ export default function ExcelUploader({ onDataImported }: ExcelUploaderProps) {
             <label htmlFor="excel-upload" className="cursor-pointer">
                 <div className="text-4xl mb-2">📊</div>
                 {fileName ? (
-                    <p className="text-blue-600 font-medium">{fileName}</p>
+                    <p className="text-[#691c32] font-medium">{fileName}</p>
                 ) : (
                     <p className="text-gray-500">Arrastra tu archivo Excel aquí o haz clic para buscar</p>
                 )}

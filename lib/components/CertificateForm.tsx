@@ -30,7 +30,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="nombre"
                             value={data.nombre}
                             onChange={(e) => handleChange('nombre', e.target.value.toUpperCase())}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             placeholder="Ej: Juan Pérez García"
                             required
                         />
@@ -44,7 +44,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="curso"
                             value={data.curso}
                             onChange={(e) => handleChange('curso', e.target.value.toUpperCase())}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             placeholder="Ej: Desarrollo Web con Next.js"
                             required
                         />
@@ -61,7 +61,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="horas"
                             value={data.horas}
                             onChange={(e) => handleChange('horas', parseInt(e.target.value) || 0)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             placeholder="Ej: 40"
                             min="1"
                             required
@@ -80,7 +80,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="startDate"
                             value={data.startDate || ''}
                             onChange={(e) => handleChange('startDate', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             required
                         />
                     </div>
@@ -93,7 +93,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="endDate"
                             value={data.endDate || ''}
                             onChange={(e) => handleChange('endDate', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             required
                         />
                     </div>
@@ -109,7 +109,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="emision"
                             value={data.emision || ''}
                             onChange={(e) => handleChange('emision', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             required
                         />
                     </div>
@@ -122,7 +122,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="vencimiento"
                             value={data.vencimiento || ''}
                             onChange={(e) => handleChange('vencimiento', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             required
                         />
                     </div>
@@ -138,7 +138,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="matricula"
                             value={data.matricula || ''}
                             onChange={(e) => handleChange('matricula', e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all text-black"
                             placeholder="Ej: 2023A001"
                             required
                         />
@@ -153,7 +153,7 @@ export default function CertificateForm({ data, onChange }: CertificateFormProps
                             id="curp"
                             value={data.curp || ''}
                             onChange={(e) => handleChange('curp', e.target.value.toUpperCase())}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-mono text-black"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#691c32] focus:border-transparent transition-all font-mono text-black"
                             placeholder="Ej: GARC850101HDFRNN09"
                             maxLength={18}
                             minLength={18}
