@@ -1,6 +1,6 @@
 import { chromium, Browser } from 'playwright';
 import { CertificateData } from './types/certificate';
-import { generateCertificateHtml } from './templates/CertificateTemplate';
+import { getTemplate, DEFAULT_TEMPLATE_ID } from './templates/registry';
 import { imagesToBase64 } from './utils/imageToBase64';
 
 const IMAGE_NAMES = [
@@ -38,15 +38,16 @@ async function getBrowserInstance() {
     return cachedBrowser;
 }
 
-export async function generatePdf(data: CertificateData): Promise<Buffer> {
+export async function generatePdf(data: CertificateData, templateId?: string): Promise<Buffer> {
     const images = await getSharedImages();
     const browser = await getBrowserInstance();
+    const { generateHtml } = getTemplate(templateId);
 
     const context = await browser.newContext();
     const page = await context.newPage();
 
     try {
-        const htmlContent = generateCertificateHtml(data, images);
+        const htmlContent = generateHtml(data, images);
         await page.setContent(htmlContent, { waitUntil: 'load' });
 
         const pdfBuffer = await page.pdf({
@@ -68,11 +69,12 @@ export async function generatePdf(data: CertificateData): Promise<Buffer> {
  * Bulk generates PDFs by reusing the global cached Chromium instance 
  * and reading the base64 images exactly once for the entire batch.
  */
-export async function generateBulkPdfs(dataArray: CertificateData[]): Promise<Buffer[]> {
+export async function generateBulkPdfs(dataArray: CertificateData[], templateId?: string): Promise<Buffer[]> {
     if (!dataArray || dataArray.length === 0) return [];
 
     const images = await getSharedImages();
     const browser = await getBrowserInstance();
+    const { generateHtml } = getTemplate(templateId);
 
     const context = await browser.newContext();
     const pdfBuffers: Buffer[] = [];
@@ -83,7 +85,7 @@ export async function generateBulkPdfs(dataArray: CertificateData[]): Promise<Bu
         for (const data of dataArray) {
             const page = await context.newPage();
             try {
-                const htmlContent = generateCertificateHtml(data, images);
+                const htmlContent = generateHtml(data, images);
                 await page.setContent(htmlContent, { waitUntil: 'load' });
 
                 const pdfBuffer = await page.pdf({

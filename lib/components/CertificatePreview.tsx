@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CertificateData } from '@/lib/types/certificate';
-import { CertificateTemplate } from '@/lib/templates/CertificateTemplate';
+import { getTemplate } from '@/lib/templates/registry';
 
 interface CertificatePreviewProps {
     data: CertificateData;
+    templateId?: string;
 }
 
-export default function CertificatePreview({ data }: CertificatePreviewProps) {
+export default function CertificatePreview({ data, templateId }: CertificatePreviewProps) {
+    const { Component } = getTemplate(templateId);
     const containerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(0.5);
 
@@ -93,7 +95,7 @@ export default function CertificatePreview({ data }: CertificatePreviewProps) {
                             left: 0,
                         }}
                     >
-                        <CertificateTemplate data={data} />
+                        <Component data={data} />
                     </div>
                 </div>
             </div>

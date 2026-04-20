@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import CertificateForm from '@/lib/components/CertificateForm';
 import CertificatePreview from '@/lib/components/CertificatePreview';
 import ExcelUploader from '@/lib/components/ExcelUploader';
+import TemplateSelector from '@/lib/components/TemplateSelector';
 import { CertificateData, CertificateUploadResult } from '@/lib/domain/Certificate';
 import { generateAndUpload } from '@/actions/certificates/generateAndUpload';
 import { generateAndUploadBulk } from '@/actions/certificates/generateAndUploadBulk';
+import { DEFAULT_TEMPLATE_ID } from '@/lib/templates/registry';
 import QRCode from 'qrcode';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,6 +44,7 @@ export default function ConstanciaPage() {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [templateId, setTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID);
 
     // ── QR preview (regenera con debounce al cambiar la validationUrl) ───────
     useEffect(() => {
@@ -130,7 +133,7 @@ export default function ConstanciaPage() {
         setSuccessMessage(null);
 
         try {
-            const { url } = await generateAndUpload(certificateData);
+            const { url } = await generateAndUpload(certificateData, templateId);
             setSuccessMessage(`Constancia subida correctamente. URL: ${url}`);
         } catch (err: any) {
             setError(err?.message || 'Error al subir la constancia.');
@@ -151,7 +154,7 @@ export default function ConstanciaPage() {
         setUploadResults([]);
 
         try {
-            const results: CertificateUploadResult[] = await generateAndUploadBulk(importedCertificates);
+            const results: CertificateUploadResult[] = await generateAndUploadBulk(importedCertificates, templateId);
 
             const statuses: UploadStatus[] = results.map((r) => ({
                 name: r.nombre,
@@ -193,6 +196,9 @@ export default function ConstanciaPage() {
                     <p className="text-lg text-[#d5b981]">
                         Completa el formulario o importa un Excel para subir constancias a Azure Blob Storage.
                     </p>
+                    <div className="flex justify-center mt-4">
+                        <TemplateSelector value={templateId} onChange={setTemplateId} />
+                    </div>
                 </header>
 
                 {/* ── Importar desde Excel ── */}
@@ -218,7 +224,7 @@ export default function ConstanciaPage() {
                         <CertificateForm data={certificateData} onChange={setCertificateData} />
                     </div>
                     <div className="lg:col-span-8 bg-white rounded-xl shadow-xl p-8 border-t-[5px] border-[#d5b981]">
-                        <CertificatePreview data={certificateData} />
+                        <CertificatePreview data={certificateData} templateId={templateId} />
                     </div>
                 </div>
 

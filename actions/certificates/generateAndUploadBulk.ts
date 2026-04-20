@@ -58,6 +58,7 @@ async function persistToDb(certData: CertificateData, blobUrl: string): Promise<
  */
 export async function generateAndUploadBulk(
     certs: CertificateData[],
+    templateId?: string,
 ): Promise<CertificateUploadResult[]> {
     if (!certs || certs.length === 0) {
         throw new Error('No hay constancias para procesar');
@@ -81,7 +82,7 @@ export async function generateAndUploadBulk(
 
     const certsWithQr = await Promise.all(certsWithCuv.map(withQrCode));
 
-    const pdfBuffers = await generateBulkPdfs(certsWithQr);
+    const pdfBuffers = await generateBulkPdfs(certsWithQr, templateId);
 
     const prepared = certsWithQr.map((certData, i) => ({
         buffer: pdfBuffers[i],

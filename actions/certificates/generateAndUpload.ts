@@ -65,10 +65,10 @@ async function persistToDb(certData: CertificateData, blobUrl: string): Promise<
  * Registers the student and certificate in the database.
  * Returns the public blob URL.
  */
-export async function generateAndUpload(data: CertificateData): Promise<{ url: string }> {
+export async function generateAndUpload(data: CertificateData, templateId?: string): Promise<{ url: string }> {
     const withCuvData = await withCuv(data);
     const withQr = await withQrCode(withCuvData);
-    const pdfBuffer = await generatePdf(withQr);
+    const pdfBuffer = await generatePdf(withQr, templateId);
     const fileName = buildFilename(withQr);
     const { url } = await uploadPdfToBlob(pdfBuffer, fileName);
     await persistToDb(withCuvData, url);

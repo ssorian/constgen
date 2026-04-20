@@ -2,6 +2,11 @@ import { CertificateData } from "../types/certificate";
 import { Montserrat } from "next/font/google";
 import parseSpanishDate from "../utils/parseSpanishDate";
 
+export const templateMeta = {
+  id: 'default',
+  name: 'Constancia Estándar',
+};
+
 interface CertificateTemplateProps {
   data: CertificateData;
 }
