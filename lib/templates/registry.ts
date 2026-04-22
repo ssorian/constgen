@@ -5,6 +5,16 @@ import {
     generateCertificateHtml,
     templateMeta as defaultMeta,
 } from './CertificateTemplate';
+import {
+    CertificateTemplate as AsistenteTemplate,
+    generateCertificateHtml as generateAsistenteHtml,
+    templateMeta as asistenteMeta,
+} from './CertificateTemplateAsistente';
+import {
+    CertificateTemplate as PonenteTemplate,
+    generateCertificateHtml as generatePonenteHtml,
+    templateMeta as ponenteMeta,
+} from './CertificateTemplatePonente';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +35,16 @@ export const templateRegistry: Record<string, TemplateEntry> = {
         meta: defaultMeta,
         Component: CertificateTemplate,
         generateHtml: generateCertificateHtml,
+    },
+    [asistenteMeta.id]: {
+        meta: asistenteMeta,
+        Component: AsistenteTemplate,
+        generateHtml: generateAsistenteHtml,
+    },
+    [ponenteMeta.id]: {
+        meta: ponenteMeta,
+        Component: PonenteTemplate,
+        generateHtml: generatePonenteHtml,
     },
 };
 
